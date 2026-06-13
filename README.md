@@ -94,7 +94,8 @@ Copy the `notes` slice end to end:
 ## Deploy
 
 CI (`.github/workflows/ci.yml`) gates every push; CD (`deploy.yml`) ships `main`
-to Cloudflare. CD needs repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
+to Cloudflare. CD is off by default — enable it with the repo variable
+`ENABLE_DEPLOY=true`, the secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`,
 and a real `database_id` in `wrangler.toml`. Manual: `pnpm build && pnpm run deploy`.
 
 ## Scripts

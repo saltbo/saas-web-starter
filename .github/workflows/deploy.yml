@@ -13,6 +13,9 @@ concurrency:
 
 jobs:
   deploy:
+    # Opt in by setting the repo variable ENABLE_DEPLOY=true (plus the CF secrets +
+    # a real database_id). Until then this job is skipped, not failed.
+    if: ${{ vars.ENABLE_DEPLOY == 'true' }}
     runs-on: ubuntu-latest
     environment: production
     steps:
