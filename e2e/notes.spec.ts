@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 test('create a note end to end [spec: notes/create]', async ({ page }) => {
   await page.goto('/')
 
-  await page.getByLabel('note').fill('an end-to-end note')
+  await page.getByRole('textbox').fill('an end-to-end note')
   await page.getByRole('button', { name: 'Add' }).click()
 
   await expect(page.getByText('an end-to-end note')).toBeVisible()

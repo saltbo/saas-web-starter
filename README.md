@@ -6,8 +6,9 @@ harness wired up. A single `notes` resource is the worked example of every layer
 
 ## Stack
 
-- Hono on Cloudflare Workers, D1 (drizzle-orm)
-- React 19 + react-query, Vite (`@cloudflare/vite-plugin`)
+- Hono on Cloudflare Workers, D1 (drizzle-orm, generated migrations)
+- React 19 + react-query + react-router 7 (lazy routes), Vite (`@cloudflare/vite-plugin`)
+- Tailwind v4 + shadcn/ui, sonner toasts, i18n (i18next), light/dark/system theme
 - Biome, dependency-cruiser (architecture enforcement), TypeScript
 - Vitest (unit / jsdom+MSW / workerd+D1), Playwright E2E
 - Gherkin `.feature` product specs

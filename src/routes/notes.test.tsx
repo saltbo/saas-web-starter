@@ -3,9 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import type { ReactNode } from 'react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import '@/i18n'
 import { server } from '@/test/msw'
-import { App } from './App'
+import NotesPage from './notes'
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 // Component test: real api client + react-query, API mocked at the network edge
 // (MSW) with a small in-memory store so the post-mutation refetch converges.
@@ -27,12 +30,12 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }
 
-describe('App', () => {
+describe('NotesPage', () => {
   it('creates a note and shows it in the list [spec: notes/create]', async () => {
     mockNotesBackend()
-    render(<App />, { wrapper })
+    render(<NotesPage />, { wrapper })
 
-    fireEvent.change(screen.getByLabelText('note'), { target: { value: 'first note' } })
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'first note' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 
     await waitFor(() => expect(screen.getByText('first note')).toBeInTheDocument())

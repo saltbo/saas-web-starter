@@ -1,0 +1,69 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { type FormEvent, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { createNote, listNotes } from '@/lib/api'
+
+export default function NotesPage() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [text, setText] = useState('')
+
+  const notes = useQuery({ queryKey: ['notes'], queryFn: async () => (await listNotes()).items })
+
+  const add = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      setText('')
+      toast.success(t('noteCreated'))
+      void queryClient.invalidateQueries({ queryKey: ['notes'] })
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Error'),
+  })
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (text.trim()) add.mutate({ text })
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="font-heading text-xl font-semibold">{t('notesTitle')}</h1>
+
+      <form onSubmit={onSubmit} className="flex gap-2">
+        <Input
+          aria-label={t('notePlaceholder')}
+          placeholder={t('notePlaceholder')}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+        />
+        <Button type="submit" disabled={add.isPending}>
+          {t('addNote')}
+        </Button>
+      </form>
+
+      {notes.isLoading ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-9" />
+          <Skeleton className="h-9" />
+        </div>
+      ) : notes.data && notes.data.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {notes.data.map((note) => (
+            <li key={note.id}>
+              <Card size="sm">
+                <CardContent>{note.text}</CardContent>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-muted-foreground text-sm">{t('notesEmpty')}</p>
+      )}
+    </div>
+  )
+}
