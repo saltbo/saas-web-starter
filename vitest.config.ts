@@ -15,7 +15,7 @@ export default defineConfig({
     // the workerd pool does not support the v8 provider.
     coverage: {
       include: ['server/**', 'shared/**'],
-      exclude: ['server/api-tests/**', '**/*.test.ts', '**/*.d.ts'],
+      exclude: ['server/integration/**', '**/*.test.ts', '**/*.d.ts'],
       reporter: ['text', 'text-summary'],
     },
     projects: [
@@ -26,7 +26,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['server/**/*.test.ts', 'shared/**/*.test.ts'],
-          exclude: ['server/api-tests/**'],
+          exclude: ['server/integration/**'],
         },
         resolve: { alias },
       },
@@ -42,7 +42,7 @@ export default defineConfig({
         },
         resolve: { alias },
       },
-      // API suite: full request flows through app.fetch inside workerd, with a real
+      // Integration suite: full request flows through app.fetch inside workerd, with a real
       // D1 binding and the production migrations applied.
       {
         plugins: [
@@ -59,9 +59,9 @@ export default defineConfig({
           })),
         ],
         test: {
-          name: 'api',
-          include: ['server/api-tests/**/*.test.ts'],
-          setupFiles: ['./server/api-tests/apply-migrations.ts'],
+          name: 'integration',
+          include: ['server/integration/**/*.test.ts'],
+          setupFiles: ['./server/integration/apply-migrations.ts'],
         },
         resolve: { alias },
       },

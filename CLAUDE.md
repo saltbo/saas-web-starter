@@ -31,7 +31,7 @@ same-directory siblings.
 - `pnpm lint` — Biome
 - `pnpm lint:arch` — dependency-cruiser architecture boundaries
 - `pnpm typecheck` — tsc (server + web)
-- `pnpm test` — vitest `unit` (node) + `web` (jsdom + MSW) + `api` (workerd + real D1)
+- `pnpm test` — vitest `unit` (node) + `web` (jsdom + MSW) + `integration` (workerd + real D1)
 - `pnpm e2e` — Playwright against the real stack
 - `pnpm build` — vite/Workers build
 
