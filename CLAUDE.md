@@ -13,18 +13,31 @@ The server is layered; dependencies point inward, enforced by `.dependency-cruis
 - `server/usecases/` — application operations over `ports.ts`; take `deps` first.
 - `server/adapters/` — port implementations: `repos/` (the only place drizzle/the
   schema are touched), plus `providers/` + `gateways/` for external HTTP when needed.
-- `server/http/` — Hono routes (split by resource), zod validation, error mapping.
+- `server/http/` — Hono routes as chained `*Routes` consts (so their types flow into
+  `AppType`), zod validation, error mapping (`onError`).
 - `server/composition.ts` — `createDeps(env)`, the only place adapters are constructed.
-- `server/worker.ts` — the Workers entry (fetch).
+- `server/worker.ts` — the Workers entry: secure headers, per-request deps wiring,
+  serves `/api/*` + static assets. Kept apart from `app.ts` so `AppType` stays
+  Workers-type-free for the SPA (the http layer is typed with `AppBindings`, not `Env`).
 - `shared/` — the API contract (DTOs), imported by both halves.
-- `src/` — the React SPA; not governed by the server layers. `src/lib/api/` mirrors
-  `server/http/`.
 - `spec/` — product behaviour specs (Gherkin `.feature`); tests carry `[spec: id]`.
 
-Path aliases: `@/` → `src/`, `@server/` → `server/`, `@shared/` → `shared/`. The two
-halves meet only through `@shared`; both cross-import directions are forbidden by
-dependency-cruiser. Use `@server/` for cross-directory server imports, `./` for
-same-directory siblings.
+The SPA has its own enforced layering (also `pnpm lint:arch`):
+
+- `src/app/` — providers, router, shell (composition; may import anything in `src`).
+- `src/routes/` — thin page components, mounted only by `app/router`.
+- `src/features/<name>/` — `api.ts` (Hono RPC calls) + `hooks.ts` (react-query);
+  features are isolated from each other.
+- `src/components/` — ui primitives + shared toggles; never import features.
+- `src/lib/` — `rpc` (the typed client), `config`, `token`, `theme`, `query-client`,
+  `utils`; a leaf (imports nothing from features/routes/app/components).
+- `src/i18n/` — setup + locales.
+
+The SPA calls the API only through `src/lib/rpc.ts` (`hc<AppType>`). The single
+compile-time link to the server is the **type-only** `AppType` import; at runtime
+it is pure HTTP. Path aliases: `@/` → `src/`, `@server/` → `server/`, `@shared/` →
+`shared/`. Use `@server/` for cross-directory server imports, `./` for same-directory
+siblings.
 
 ## Gates (all must pass; CI runs them)
 
@@ -44,4 +57,7 @@ same-directory siblings.
 - Set `database_id` in `wrangler.toml` after creating the D1 (`wrangler d1 create`).
 - Auth is OIDC: SPA stores the token (localStorage) and sends Bearer; the API
   verifies the JWT in `requireAuth` middleware (jose + JWKS). No session table.
-  Protected routes sit after `routes.use('*', requireAuth)` in server/app.ts.
+  Protected routes sit after `.use('*', requireAuth)` in server/app.ts.
+- One set of env vars, on the backend. The SPA fetches public config from
+  `GET /api/configz`; there are no `VITE_*` vars.
+- Commits follow Conventional Commits (commit-msg hook); pre-commit runs Biome.

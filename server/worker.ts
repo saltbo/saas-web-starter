@@ -1,5 +1,6 @@
 import type { Env } from '@server/env'
 import { Hono } from 'hono'
+import { secureHeaders } from 'hono/secure-headers'
 import { app } from './app'
 import { createDeps } from './composition'
 import type { AppVariables } from './http/context'
@@ -8,6 +9,7 @@ import type { AppVariables } from './http/context'
 // app.ts so the exported AppType (consumed by the SPA's RPC client) carries no
 // Workers-only types. Exported for integration tests that drive the full stack.
 export const worker = new Hono<{ Bindings: Env; Variables: AppVariables }>()
+  .use('*', secureHeaders())
   .use('*', async (c, next) => {
     c.set('deps', createDeps(c.env))
     await next()

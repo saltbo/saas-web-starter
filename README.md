@@ -7,11 +7,13 @@ harness wired up. A single `notes` resource is the worked example of every layer
 ## Stack
 
 - Hono on Cloudflare Workers, D1 (drizzle-orm, generated migrations)
+- Typed end to end: the SPA calls the API through a **Hono RPC** client (`hc<AppType>`)
 - React 19 + react-query + react-router 7 (lazy routes), Vite (`@cloudflare/vite-plugin`)
 - Tailwind v4 + shadcn/ui, sonner toasts, i18n (i18next), light/dark/system theme
+- OIDC auth (`oidc-client-ts` + `jose`), stateless JWT verification
 - Biome, dependency-cruiser (architecture enforcement), TypeScript
-- Vitest (unit / jsdom+MSW / workerd+D1), Playwright E2E
-- Gherkin `.feature` product specs
+- Vitest (unit / jsdom+MSW / workerd+D1), Playwright E2E, Gherkin `.feature` specs
+- Husky: conventional-commit + lint-staged hooks; CI + CD workflows
 
 ## Quick start
 
@@ -27,15 +29,44 @@ wrangler d1 create saas-web-starter   # paste database_id into wrangler.toml
 pnpm db:migrate:local                 # apply migrations to the local D1
 ```
 
+## Project structure
+
+The server follows the dependency rule (`http → usecases → domain`; adapters and
+composition wire it together). The SPA has its own enforced layering. Both are
+checked by `pnpm lint:arch`.
+
+```
+server/
+  domain/        pure business rules (no framework, no I/O)
+  usecases/      app operations + ports.ts (interfaces for the outside world)
+  adapters/      port implementations (repos = the only drizzle; auth verifier)
+  http/          routes (chained → AppType), middleware, error mapping
+  composition.ts createDeps(env): the only place adapters are constructed
+  worker.ts      entry: wires deps, secure headers, serves /api/* + static assets
+shared/          the API contract (DTOs) — the only thing both halves import
+src/
+  app/           providers, router, shell  (composition; may import anything in src)
+  routes/        thin page components       (mounted only by app/router)
+  features/      notes, auth — api + hooks  (isolated from each other)
+  components/     ui primitives + toggles    (never import features)
+  lib/           rpc, config, token, theme, query-client, utils  (a leaf)
+  i18n/          setup + locales
+```
+
+The SPA talks to the API only through `lib/rpc.ts`. The one compile-time link to
+the server is the type-only `AppType` import (Hono RPC); at runtime it's pure HTTP.
+
 ## Auth (OIDC)
 
 No custom login backend. The SPA logs in against your OIDC provider
-(`oidc-client-ts`, Authorization Code + PKCE), stores the token in localStorage,
-and sends it as `Authorization: Bearer`. The API verifies the JWT in middleware
-(`jose`, against the issuer's JWKS; audience = client id) — stateless, no session
-table. The user comes from the token claims.
+(Authorization Code + PKCE), stores the token in localStorage, and sends it as
+`Authorization: Bearer`. The API verifies the JWT in middleware (against the
+issuer's JWKS; audience = client id) — stateless, no session table.
 
-- Frontend: copy `.env.example` → `.env.local`, set `VITE_OIDC_ISSUER` / `VITE_OIDC_CLIENT_ID`.
+There is **one set of env vars, on the backend**. The SPA fetches its public
+config (issuer + client id) from `GET /api/configz` at startup, so the same bundle
+runs in every environment.
+
 - Backend: copy `.dev.vars.example` → `.dev.vars`, set `OIDC_ISSUER` / `OIDC_CLIENT_ID`.
 - Local/E2E without a provider: set `OIDC_DEV_USER` in `.dev.vars` to accept any
   bearer token as a fixed user. **Never set it in production.**
@@ -50,10 +81,23 @@ Copy the `notes` slice end to end:
 4. `server/usecases/ports.ts` + a usecase module — orchestration over a repo port.
 5. `server/adapters/repos/` — the drizzle repo.
 6. `server/composition.ts` — wire the repo into `createDeps`.
-7. `server/http/` — the routes; mount in `server/app.ts`.
-8. `src/lib/api/` + UI; tests at the cheapest layer; a `spec/*.feature` scenario.
+7. `server/http/` — a chained `*Routes` const; mount in `server/app.ts`.
+8. `src/features/<name>/` — `api.ts` (rpc calls) + `hooks.ts` (react-query); a page
+   in `src/routes/`; tests at the cheapest layer; a `spec/*.feature` scenario.
+
+## Conventions
+
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org)
+  (enforced by the commit-msg hook).
+- Pre-commit runs Biome on staged files.
+
+## Deploy
+
+CI (`.github/workflows/ci.yml`) gates every push; CD (`deploy.yml`) ships `main`
+to Cloudflare. CD needs repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
+and a real `database_id` in `wrangler.toml`. Manual: `pnpm build && pnpm run deploy`.
 
 ## Scripts
 
-`pnpm test` (unit+web+api) · `pnpm e2e` · `pnpm lint` · `pnpm lint:arch` ·
+`pnpm test` (unit+web+integration) · `pnpm e2e` · `pnpm lint` · `pnpm lint:arch` ·
 `pnpm typecheck` · `pnpm build` · `pnpm db:generate` · `pnpm cf-typegen`
