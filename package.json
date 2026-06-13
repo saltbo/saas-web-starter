@@ -1,0 +1,68 @@
+{
+  "name": "saas-web-starter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.2",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply saas-web-starter --local",
+    "db:migrate:remote": "wrangler d1 migrations apply saas-web-starter --remote",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "typecheck": "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p src/tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:server": "rm -rf .wrangler/e2e && wrangler d1 migrations apply saas-web-starter --local --persist-to .wrangler/e2e && E2E_PERSIST=.wrangler/e2e vite dev --port 5173",
+    "lint": "biome check .",
+    "lint:arch": "depcruise server/ shared/ --config .dependency-cruiser.cjs",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "cf-typegen": "wrangler types server/worker-configuration.d.ts --include-runtime=false --env-file .dev.vars.example",
+    "postinstall": "wrangler types server/worker-configuration.d.ts --include-runtime=false --env-file .dev.vars.example"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
+    "@tanstack/react-query": "^5.101.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.23",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
+    "@cloudflare/vite-plugin": "^1.39.2",
+    "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@cloudflare/workers-types": "^4.20260505.1",
+    "@playwright/test": "^1.60.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react-swc": "^4.3.1",
+    "@vitest/coverage-v8": "^4.1.8",
+    "dependency-cruiser": "^17.4.3",
+    "drizzle-kit": "^0.31.10",
+    "jsdom": "^29.0.2",
+    "msw": "^2.14.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.2",
+    "vitest": "^4.1.2",
+    "wrangler": "^4.95.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@swc/core", "esbuild", "workerd"]
+  },
+  "volta": {
+    "node": "24.14.1",
+    "pnpm": "10.30.2"
+  }
+}

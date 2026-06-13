@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Architecture boundaries
+        run: pnpm lint:arch
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Migrations are generated from schema
+        run: |
+          pnpm db:generate
+          if [ -n "$(git status --porcelain migrations)" ]; then
+            echo "::error::schema.ts changed without a generated migration. Run 'pnpm db:generate' and commit."
+            git status --short migrations
+            exit 1
+          fi
+
+      - name: Test (unit + api)
+        run: pnpm test
+
+      - name: Coverage report
+        run: pnpm test:coverage
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The E2E worker needs a signing secret; the example value is a valid test secret.
+      - run: cp .dev.vars.example .dev.vars
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E (real stack)
+        run: pnpm e2e
