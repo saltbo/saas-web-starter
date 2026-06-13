@@ -8,7 +8,9 @@ export default defineConfig(() => {
   const isVitest = process.env.VITEST === 'true'
 
   return {
-    build: { outDir: 'dist', emptyOutDir: true },
+    // Routes are code-split; the remaining vendor core (react, router, query, oidc)
+    // legitimately exceeds the default 500kB warning.
+    build: { outDir: 'dist', emptyOutDir: true, chunkSizeWarningLimit: 1000 },
     plugins: [
       react(),
       tailwindcss(),

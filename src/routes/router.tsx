@@ -1,11 +1,16 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, redirect } from 'react-router'
 import { Layout } from '@/components/app-shell/layout'
+import { getToken } from '@/lib/auth/oidc'
 import { RouteError } from '@/routes/error'
 
-// Route-level code splitting via react-router's `lazy` (data router).
+// Route-level code splitting via react-router's `lazy` (data router). The `/`
+// subtree requires a token; /login and /callback are public.
 export const router = createBrowserRouter([
+  { path: '/login', lazy: async () => ({ Component: (await import('@/routes/login')).default }) },
+  { path: '/callback', lazy: async () => ({ Component: (await import('@/routes/callback')).default }) },
   {
     path: '/',
+    loader: () => (getToken() ? null : redirect('/login')),
     element: <Layout />,
     errorElement: <RouteError />,
     children: [

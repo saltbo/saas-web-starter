@@ -1,12 +1,27 @@
 import path from 'node:path'
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import react from '@vitejs/plugin-react-swc'
+import { exportJWK, generateKeyPair } from 'jose'
 import { defineConfig } from 'vitest/config'
 
 const alias = {
   '@': path.resolve(__dirname, './src'),
   '@server': path.resolve(__dirname, './server'),
   '@shared': path.resolve(__dirname, './shared'),
+}
+
+// A throwaway keypair so the integration suite exercises the REAL JWT verification
+// path: the worker verifies against the public JWKS, the test signs with the private key.
+async function testAuthBindings() {
+  const { publicKey, privateKey } = await generateKeyPair('ES256', { extractable: true })
+  const publicJwk = { ...(await exportJWK(publicKey)), kid: 'test', alg: 'ES256' }
+  const privateJwk = { ...(await exportJWK(privateKey)), kid: 'test', alg: 'ES256' }
+  return {
+    OIDC_ISSUER: 'https://issuer.test',
+    OIDC_CLIENT_ID: 'test-client',
+    OIDC_JWKS: JSON.stringify({ keys: [publicJwk] }),
+    TEST_PRIVATE_JWK: JSON.stringify(privateJwk),
+  }
 }
 
 export default defineConfig({
@@ -54,6 +69,7 @@ export default defineConfig({
               d1Databases: ['DB'],
               bindings: {
                 TEST_MIGRATIONS: await readD1Migrations(path.join(__dirname, 'migrations')),
+                ...(await testAuthBindings()),
               },
             },
           })),

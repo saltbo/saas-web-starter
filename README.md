@@ -27,6 +27,19 @@ wrangler d1 create saas-web-starter   # paste database_id into wrangler.toml
 pnpm db:migrate:local                 # apply migrations to the local D1
 ```
 
+## Auth (OIDC)
+
+No custom login backend. The SPA logs in against your OIDC provider
+(`oidc-client-ts`, Authorization Code + PKCE), stores the token in localStorage,
+and sends it as `Authorization: Bearer`. The API verifies the JWT in middleware
+(`jose`, against the issuer's JWKS; audience = client id) — stateless, no session
+table. The user comes from the token claims.
+
+- Frontend: copy `.env.example` → `.env.local`, set `VITE_OIDC_ISSUER` / `VITE_OIDC_CLIENT_ID`.
+- Backend: copy `.dev.vars.example` → `.dev.vars`, set `OIDC_ISSUER` / `OIDC_CLIENT_ID`.
+- Local/E2E without a provider: set `OIDC_DEV_USER` in `.dev.vars` to accept any
+  bearer token as a fixed user. **Never set it in production.**
+
 ## Adding a capability
 
 Copy the `notes` slice end to end:

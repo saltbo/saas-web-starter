@@ -1,6 +1,11 @@
 # Copy to .dev.vars for local development. Also the source of var names for
 # `wrangler types` (pnpm cf-typegen) — keep keys here in sync with code that
 # reads them via env.
-#
-# This starter reads no secrets yet. Add app secrets here, e.g.:
-# SOME_API_KEY=replace-me
+
+# OIDC: the API verifies bearer JWTs against this issuer's JWKS (audience = client id).
+OIDC_ISSUER=https://your-issuer.example.com
+OIDC_CLIENT_ID=your-client-id
+
+# Dev/E2E only — accept any bearer token as this user, skipping verification.
+# NEVER set this in production.
+# OIDC_DEV_USER={"sub":"dev","email":"dev@local","name":"Dev"}

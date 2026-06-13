@@ -1,6 +1,7 @@
-import type { NotesRepo } from './ports'
+import type { AuthVerifier, NotesRepo } from './ports'
 
-// The dependency bundle injected into usecases; assembled in composition.ts.
+// The dependency bundle injected into usecases/middleware; assembled in composition.ts.
 export interface Deps {
   notesRepo: NotesRepo
+  authVerifier: AuthVerifier
 }

@@ -1,3 +1,5 @@
+import { getToken, TOKEN_KEY } from '@/lib/auth/oidc'
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -19,14 +21,21 @@ async function apiError(response: Response, fallbackMessage: string): Promise<Ap
 }
 
 export async function apiRequest<T>(path: string, fallbackMessage: string, init?: RequestInit): Promise<T> {
+  const token = getToken()
   const response = await fetch(path, {
     ...init,
-    credentials: 'include',
     headers: {
       ...(init?.body ? { 'content-type': 'application/json' } : {}),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
   })
+
+  if (response.status === 401) {
+    localStorage.removeItem(TOKEN_KEY)
+    window.location.href = '/login'
+    throw new ApiError('Authentication required.', 401)
+  }
 
   if (!response.ok) {
     throw await apiError(response, fallbackMessage)

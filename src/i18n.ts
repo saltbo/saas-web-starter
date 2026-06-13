@@ -22,6 +22,8 @@ const resources = {
       notFoundTitle: 'Page not found',
       notFoundBody: 'That page does not exist.',
       backHome: 'Back home',
+      signIn: 'Sign in',
+      signOut: 'Sign out',
     },
   },
   'zh-CN': {
@@ -39,6 +41,8 @@ const resources = {
       notFoundTitle: '页面不存在',
       notFoundBody: '这个页面不存在。',
       backHome: '返回首页',
+      signIn: '登录',
+      signOut: '退出',
     },
   },
 }

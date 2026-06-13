@@ -2,6 +2,7 @@ import type { Env } from '@server/env'
 import { Hono } from 'hono'
 import { createDeps } from './composition'
 import type { AppEnv } from './http/context'
+import { requireAuth } from './http/middleware'
 import { registerNoteRoutes } from './http/notes'
 
 const routes = new Hono<AppEnv>()
@@ -11,8 +12,13 @@ routes.use('*', async (c, next) => {
   await next()
 })
 
+// Public.
 routes.get('/health', (c) => c.json({ ok: true, name: 'saas-web-starter' }))
 
+// Everything below requires a valid bearer token.
+routes.use('*', requireAuth)
+
+routes.get('/me', (c) => c.json({ user: c.get('user') }))
 registerNoteRoutes(routes)
 
 const app = new Hono<{ Bindings: Env }>().route('/api', routes)

@@ -1,8 +1,11 @@
+import { LogOut } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useNavigate } from 'react-router'
 import { Toaster } from 'sonner'
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Button } from '@/components/ui/button'
+import { logout } from '@/lib/auth/oidc'
 import { cn } from '@/lib/utils'
 
 function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
@@ -21,6 +24,7 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
 
 export function Layout() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <header className="border-b">
@@ -33,6 +37,16 @@ export function Layout() {
           <div className="ml-auto flex items-center gap-1">
             <LanguageToggle />
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('signOut')}
+              onClick={() => {
+                void logout().finally(() => navigate('/login', { replace: true }))
+              }}
+            >
+              <LogOut />
+            </Button>
           </div>
         </div>
       </header>
