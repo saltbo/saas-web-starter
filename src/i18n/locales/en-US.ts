@@ -1,0 +1,17 @@
+export const enUS = {
+  appName: 'saas-web-starter',
+  navNotes: 'Notes',
+  navAbout: 'About',
+  notesTitle: 'Notes',
+  notePlaceholder: 'Write a note',
+  addNote: 'Add',
+  notesEmpty: 'No notes yet.',
+  noteCreated: 'Note added',
+  aboutTitle: 'About',
+  aboutBody: 'A clean-architecture starter: Hono on Cloudflare Workers + React SPA + D1.',
+  notFoundTitle: 'Page not found',
+  notFoundBody: 'That page does not exist.',
+  backHome: 'Back home',
+  signIn: 'Sign in',
+  signOut: 'Sign out',
+}

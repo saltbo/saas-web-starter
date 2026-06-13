@@ -1,5 +1,13 @@
 import { z } from 'zod'
-import type { Env } from './env'
+
+// The shape getAuthConfig reads. A plain interface (Cloudflare.Env is a structural
+// superset) so this module — and everything that imports it — stays browser-safe.
+export interface AuthEnv {
+  OIDC_ISSUER: string
+  OIDC_CLIENT_ID: string
+  OIDC_JWKS?: string
+  OIDC_DEV_USER?: string
+}
 
 // Runtime validation of auth env. Throws a clear error if misconfigured, instead
 // of failing deep inside token verification.
@@ -19,7 +27,7 @@ export interface AuthConfig {
   devUser?: string
 }
 
-export function getAuthConfig(env: Env): AuthConfig {
+export function getAuthConfig(env: AuthEnv): AuthConfig {
   const parsed = authConfigSchema.safeParse(env)
   if (!parsed.success) {
     const detail = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')

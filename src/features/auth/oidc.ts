@@ -1,8 +1,6 @@
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 import { getConfig } from '@/lib/config'
-
-// The verified bearer token the API expects (the OIDC id_token: aud = client id).
-export const TOKEN_KEY = 'auth_token'
+import { clearToken, getToken, setToken } from '@/lib/token'
 
 let manager: UserManager | null = null
 
@@ -23,8 +21,8 @@ function getManager(): UserManager {
   return manager
 }
 
-export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+export function isAuthenticated(): boolean {
+  return getToken() !== null
 }
 
 export async function login(): Promise<void> {
@@ -34,10 +32,10 @@ export async function login(): Promise<void> {
 export async function completeLogin(): Promise<void> {
   const user = await getManager().signinRedirectCallback()
   const token = user.id_token ?? user.access_token
-  if (token) localStorage.setItem(TOKEN_KEY, token)
+  if (token) setToken(token)
 }
 
 export async function logout(): Promise<void> {
-  localStorage.removeItem(TOKEN_KEY)
+  clearToken()
   await getManager().removeUser()
 }

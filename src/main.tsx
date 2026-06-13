@@ -1,13 +1,11 @@
-import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
+import { Providers } from '@/app/providers'
+import { router } from '@/app/router'
 import { loadConfig } from '@/lib/config'
-import { queryClient } from '@/lib/query-client'
-import { ThemeProvider } from '@/lib/theme'
-import { router } from '@/routes/router'
-import './i18n'
-import './styles/globals.css'
+import '@/i18n'
+import '@/styles/globals.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found.')
@@ -17,11 +15,9 @@ loadConfig()
   .then(() => {
     createRoot(root).render(
       <StrictMode>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-          </QueryClientProvider>
-        </ThemeProvider>
+        <Providers>
+          <RouterProvider router={router} />
+        </Providers>
       </StrictMode>,
     )
   })

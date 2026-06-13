@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { completeLogin } from '@/lib/auth/oidc'
+import { completeLogin } from '@/features/auth'
 
 export default function CallbackPage() {
   const navigate = useNavigate()

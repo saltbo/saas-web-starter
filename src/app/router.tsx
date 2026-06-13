@@ -1,6 +1,6 @@
-import { createBrowserRouter, redirect } from 'react-router'
-import { Layout } from '@/components/app-shell/layout'
-import { getToken } from '@/lib/auth/oidc'
+import { createBrowserRouter } from 'react-router'
+import { Layout } from '@/app/layout'
+import { requireAuthLoader } from '@/features/auth'
 import { RouteError } from '@/routes/error'
 
 // Route-level code splitting via react-router's `lazy` (data router). The `/`
@@ -10,7 +10,7 @@ export const router = createBrowserRouter([
   { path: '/callback', lazy: async () => ({ Component: (await import('@/routes/callback')).default }) },
   {
     path: '/',
-    loader: () => (getToken() ? null : redirect('/login')),
+    loader: requireAuthLoader,
     element: <Layout />,
     errorElement: <RouteError />,
     children: [

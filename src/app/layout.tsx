@@ -5,9 +5,11 @@ import { Toaster } from 'sonner'
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
-import { logout } from '@/lib/auth/oidc'
+import { logout } from '@/features/auth'
 import { cn } from '@/lib/utils'
 
+// The app shell: composes navigation, theme/language toggles, and auth. Lives in
+// app/ because it wires features together (a reusable component would not).
 function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <NavLink

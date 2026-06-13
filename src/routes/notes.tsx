@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -6,28 +5,28 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { createNote, listNotes } from '@/lib/api'
+import { useCreateNote, useNotes } from '@/features/notes'
 
 export default function NotesPage() {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const [text, setText] = useState('')
-
-  const notes = useQuery({ queryKey: ['notes'], queryFn: async () => (await listNotes()).items })
-
-  const add = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      setText('')
-      toast.success(t('noteCreated'))
-      void queryClient.invalidateQueries({ queryKey: ['notes'] })
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Error'),
-  })
+  const notes = useNotes()
+  const add = useCreateNote()
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
-    if (text.trim()) add.mutate({ text })
+    const value = text.trim()
+    if (!value) return
+    add.mutate(
+      { text: value },
+      {
+        onSuccess: () => {
+          setText('')
+          toast.success(t('noteCreated'))
+        },
+        onError: (error) => toast.error(error instanceof Error ? error.message : 'Error'),
+      },
+    )
   }
 
   return (

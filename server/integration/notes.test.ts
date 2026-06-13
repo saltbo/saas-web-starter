@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test'
-import { app } from '@server/app'
+import { worker } from '@server/worker'
 import { importJWK, SignJWT } from 'jose'
 import { describe, expect, it } from 'vitest'
 
@@ -19,7 +19,7 @@ async function request(path: string, init?: RequestInit & { auth?: boolean }) {
   const headers = new Headers(init?.headers)
   if (init?.body && !headers.has('content-type')) headers.set('content-type', 'application/json')
   if (init?.auth) headers.set('authorization', await bearer())
-  return app.fetch(new Request(`http://app.test${path}`, { ...init, headers }), env)
+  return worker.fetch(new Request(`http://app.test${path}`, { ...init, headers }), env)
 }
 
 describe('config', () => {

@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { getToken, login } from '@/lib/auth/oidc'
+import { isAuthenticated, login } from '@/features/auth'
 
 export default function LoginPage() {
   const { t } = useTranslation()
-  if (getToken()) return <Navigate to="/" replace />
+  if (isAuthenticated()) return <Navigate to="/" replace />
 
   return (
     <div className="grid min-h-dvh place-items-center bg-background text-foreground">

@@ -1,28 +1,21 @@
-import type { Env } from '@server/env'
 import { Hono } from 'hono'
-import { createDeps } from './composition'
-import { registerConfigRoutes } from './http/config'
+import { configRoutes } from './http/config'
 import type { AppEnv } from './http/context'
+import { onError } from './http/errors'
 import { requireAuth } from './http/middleware'
-import { registerNoteRoutes } from './http/notes'
+import { notesRoutes } from './http/notes'
 
-const routes = new Hono<AppEnv>()
+// Routes are chained (not registered via side-effecting functions) so their types
+// flow into `AppType`, which the SPA's Hono RPC client consumes. Per-request deps
+// are wired by the worker; see server/worker.ts.
+const api = new Hono<AppEnv>()
+  .get('/health', (c) => c.json({ ok: true, name: 'saas-web-starter' }))
+  .route('/', configRoutes)
+  // Everything below requires a valid bearer token.
+  .use('*', requireAuth)
+  .get('/me', (c) => c.json({ user: c.get('user') }))
+  .route('/', notesRoutes)
 
-routes.use('*', async (c, next) => {
-  c.set('deps', createDeps(c.env))
-  await next()
-})
+export const app = new Hono<AppEnv>().onError(onError).route('/api', api)
 
-// Public.
-routes.get('/health', (c) => c.json({ ok: true, name: 'saas-web-starter' }))
-registerConfigRoutes(routes)
-
-// Everything below requires a valid bearer token.
-routes.use('*', requireAuth)
-
-routes.get('/me', (c) => c.json({ user: c.get('user') }))
-registerNoteRoutes(routes)
-
-const app = new Hono<{ Bindings: Env }>().route('/api', routes)
-
-export { app }
+export type AppType = typeof app
