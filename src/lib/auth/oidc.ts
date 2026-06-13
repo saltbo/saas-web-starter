@@ -1,17 +1,19 @@
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
+import { getConfig } from '@/lib/config'
 
 // The verified bearer token the API expects (the OIDC id_token: aud = client id).
 export const TOKEN_KEY = 'auth_token'
 
 let manager: UserManager | null = null
 
-// Constructed lazily so the app loads even before OIDC env is configured (and so
-// E2E, which injects a token directly, never touches the provider).
+// Constructed lazily from the runtime config (GET /api/configz), so OIDC settings
+// live only on the backend and E2E (which injects a token) never touches the provider.
 function getManager(): UserManager {
   if (!manager) {
+    const { issuer, clientId } = getConfig().oidc
     manager = new UserManager({
-      authority: import.meta.env.VITE_OIDC_ISSUER,
-      client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
+      authority: issuer,
+      client_id: clientId,
       redirect_uri: `${window.location.origin}/callback`,
       response_type: 'code',
       scope: 'openid profile email',

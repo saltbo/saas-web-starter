@@ -22,6 +22,14 @@ async function request(path: string, init?: RequestInit & { auth?: boolean }) {
   return app.fetch(new Request(`http://app.test${path}`, { ...init, headers }), env)
 }
 
+describe('config', () => {
+  it('serves public runtime config without a token', async () => {
+    const response = await request('/api/configz')
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ oidc: { issuer: 'https://issuer.test', clientId: 'test-client' } })
+  })
+})
+
 describe('auth', () => {
   it('rejects requests without a token [spec: auth/require-token]', async () => {
     expect((await request('/api/notes')).status).toBe(401)
