@@ -19,6 +19,9 @@ const resources = {
       noteCreated: 'Note added',
       aboutTitle: 'About',
       aboutBody: 'A clean-architecture starter: Hono on Cloudflare Workers + React SPA + D1.',
+      notFoundTitle: 'Page not found',
+      notFoundBody: 'That page does not exist.',
+      backHome: 'Back home',
     },
   },
   'zh-CN': {
@@ -33,6 +36,9 @@ const resources = {
       noteCreated: '已添加',
       aboutTitle: '关于',
       aboutBody: '一个整洁架构脚手架：Cloudflare Workers 上的 Hono + React SPA + D1。',
+      notFoundTitle: '页面不存在',
+      notFoundBody: '这个页面不存在。',
+      backHome: '返回首页',
     },
   },
 }

@@ -23,7 +23,8 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "cf-typegen": "wrangler types server/worker-configuration.d.ts --include-runtime=false --env-file .dev.vars.example",
-    "postinstall": "wrangler types server/worker-configuration.d.ts --include-runtime=false --env-file .dev.vars.example"
+    "postinstall": "wrangler types server/worker-configuration.d.ts --include-runtime=false --env-file .dev.vars.example",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=24"
@@ -62,7 +63,9 @@
     "@vitest/coverage-v8": "^4.1.8",
     "dependency-cruiser": "^17.4.3",
     "drizzle-kit": "^0.31.10",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
+    "lint-staged": "^16.1.2",
     "msw": "^2.14.6",
     "shadcn": "^4.10.0",
     "tailwindcss": "^4.2.4",
@@ -82,5 +85,8 @@
   "volta": {
     "node": "24.14.1",
     "pnpm": "10.30.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,json,jsonc}": "biome check --write --no-errors-on-unmatched"
   }
 }
