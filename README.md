@@ -98,6 +98,20 @@ to Cloudflare. CD is off by default — enable it with the repo variable
 `ENABLE_DEPLOY=true`, the secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`,
 and a real `database_id` in `wrangler.toml`. Manual: `pnpm build && pnpm run deploy`.
 
+## Coverage policy
+
+`pnpm test:coverage` (run in CI) enforces per-file thresholds over the layers the
+**fast** suites own (`unit` + `web`):
+
+- business logic (`server/domain`, `server/usecases`) — **95%**
+- everything else gated (`shared`, `src/features`, `src/lib` logic) — **90%**
+
+The edge layers the **workerd `integration`** suite owns (`adapters/repos`,
+`composition`, `worker`, http full-flow, the real JWKS verify path) can't be
+v8-instrumented, so they're guaranteed by the integration suite passing +
+`lint:arch`, not a coverage number. Pure presentational/config glue
+(`lib/theme`, `lib/query-client`, `lib/utils`, `ui/` primitives) is excluded.
+
 ## Scripts
 
 `pnpm test` (unit+web+integration) · `pnpm e2e` · `pnpm lint` · `pnpm lint:arch` ·

@@ -26,12 +26,45 @@ async function testAuthBindings() {
 
 export default defineConfig({
   test: {
-    // Coverage is collected from the unit project only (`pnpm test:coverage`);
-    // the workerd pool does not support the v8 provider.
+    // Coverage gates the layers the FAST suites own (node `unit` + jsdom `web`); the
+    // workerd `integration` pool can't be v8-instrumented, so the edge layers it owns
+    // (adapters/repos, composition, worker, http full-flow, the real JWKS verify path)
+    // are proven by the integration suite + `lint:arch`, not a coverage %. See README.
     coverage: {
-      include: ['server/**', 'shared/**'],
-      exclude: ['server/integration/**', '**/*.test.ts', '**/*.d.ts'],
+      provider: 'v8',
+      all: true,
       reporter: ['text', 'text-summary'],
+      include: [
+        // business logic
+        'server/domain/**',
+        'server/usecases/**',
+        // pure contract + helpers
+        'shared/**',
+        // frontend logic (covered by the `web` project)
+        'src/features/**',
+        'src/lib/**',
+      ],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/*.d.ts',
+        '**/index.ts', // barrels: re-exports only
+        // Presentational / config glue — exercised by the web component tests + e2e,
+        // not worth unit-gating (same spirit as "don't test the ui/ primitives").
+        'src/lib/query-client.ts',
+        'src/lib/utils.ts',
+        'src/lib/theme.tsx',
+      ],
+      thresholds: {
+        perFile: true,
+        // Default floor for everything in `include`.
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+        // Business logic: stricter.
+        'server/domain/**': { statements: 95, branches: 95, functions: 95, lines: 95 },
+        'server/usecases/**': { statements: 95, branches: 95, functions: 95, lines: 95 },
+      },
     },
     projects: [
       // Server fast suite: pure domain rules, usecases over fake ports, adapters

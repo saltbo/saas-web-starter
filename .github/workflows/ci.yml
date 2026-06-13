@@ -38,10 +38,10 @@ jobs:
             exit 1
           fi
 
-      - name: Test (unit + api)
+      - name: Test (unit + web + integration)
         run: pnpm test
 
-      - name: Coverage report
+      - name: Coverage thresholds
         run: pnpm test:coverage
 
       - name: Build

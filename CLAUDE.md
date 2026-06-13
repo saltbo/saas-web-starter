@@ -45,6 +45,10 @@ siblings.
 - `pnpm lint:arch` — dependency-cruiser architecture boundaries
 - `pnpm typecheck` — tsc (server + web)
 - `pnpm test` — vitest `unit` (node) + `web` (jsdom + MSW) + `integration` (workerd + real D1)
+- `pnpm test:coverage` — per-file thresholds over unit+web: business logic
+  (domain/usecases) 95%, other gated layers 90%. Integration/e2e-only layers
+  (repos, composition, worker, http full-flow) aren't v8-instrumentable — they're
+  covered by the integration suite + lint:arch, not a %.
 - `pnpm e2e` — Playwright against the real stack
 - `pnpm build` — vite/Workers build
 
