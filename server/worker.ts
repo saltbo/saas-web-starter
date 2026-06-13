@@ -1,5 +1,6 @@
 import type { Env } from '@server/env'
 import { Hono } from 'hono'
+import { logger } from 'hono/logger'
 import { secureHeaders } from 'hono/secure-headers'
 import { app } from './app'
 import { createDeps } from './composition'
@@ -10,6 +11,7 @@ import type { AppVariables } from './http/context'
 // Workers-only types. Exported for integration tests that drive the full stack.
 export const worker = new Hono<{ Bindings: Env; Variables: AppVariables }>()
   .use('*', secureHeaders())
+  .use('*', logger())
   .use('*', async (c, next) => {
     c.set('deps', createDeps(c.env))
     await next()

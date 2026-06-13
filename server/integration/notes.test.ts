@@ -15,10 +15,10 @@ async function bearer(claims: { sub?: string; email?: string } = {}) {
   return `Bearer ${token}`
 }
 
-async function request(path: string, init?: RequestInit & { auth?: boolean }) {
+async function request(path: string, init?: RequestInit & { auth?: boolean; sub?: string }) {
   const headers = new Headers(init?.headers)
   if (init?.body && !headers.has('content-type')) headers.set('content-type', 'application/json')
-  if (init?.auth) headers.set('authorization', await bearer())
+  if (init?.auth) headers.set('authorization', await bearer({ sub: init.sub }))
   return worker.fetch(new Request(`http://app.test${path}`, { ...init, headers }), env)
 }
 
@@ -50,7 +50,7 @@ describe('auth', () => {
 
 describe('notes api', () => {
   it('starts empty, then lists a created note [spec: notes/create]', async () => {
-    expect(await (await request('/api/notes', { auth: true })).json()).toEqual({ items: [] })
+    expect(await (await request('/api/notes', { auth: true })).json()).toEqual({ items: [], nextCursor: null })
 
     const created = await request('/api/notes', {
       method: 'POST',
@@ -63,6 +63,34 @@ describe('notes api', () => {
 
     const list = (await (await request('/api/notes', { auth: true })).json()) as { items: Array<{ text: string }> }
     expect(list.items.map((note) => note.text)).toEqual(['hello world'])
+  })
+
+  it('scopes notes to their owner [spec: notes/owner-scope]', async () => {
+    await request('/api/notes', { method: 'POST', auth: true, sub: 'user-1', body: JSON.stringify({ text: 'mine' }) })
+
+    const others = (await (await request('/api/notes', { auth: true, sub: 'user-2' })).json()) as { items: unknown[] }
+    expect(others.items).toEqual([])
+  })
+
+  it('paginates with a cursor [spec: notes/paginate]', async () => {
+    for (const text of ['a', 'b', 'c']) {
+      await request('/api/notes', { method: 'POST', auth: true, body: JSON.stringify({ text }) })
+    }
+
+    const seen: string[] = []
+    let cursor: string | null = null
+    for (let page = 0; page < 5; page++) {
+      const path = cursor ? `/api/notes?limit=2&cursor=${encodeURIComponent(cursor)}` : '/api/notes?limit=2'
+      const body = (await (await request(path, { auth: true })).json()) as {
+        items: Array<{ text: string }>
+        nextCursor: string | null
+      }
+      seen.push(...body.items.map((note) => note.text))
+      cursor = body.nextCursor
+      if (!cursor) break
+    }
+
+    expect(seen.sort()).toEqual(['a', 'b', 'c'])
   })
 
   it('rejects an empty note [spec: notes/validate]', async () => {

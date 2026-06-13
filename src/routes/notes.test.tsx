@@ -15,7 +15,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 function mockNotesBackend(initial: Note[] = []) {
   const store = [...initial]
   server.use(
-    http.get('/api/notes', () => HttpResponse.json({ items: store })),
+    http.get('/api/notes', () => HttpResponse.json({ items: store, nextCursor: null })),
     http.post('/api/notes', async ({ request }) => {
       const body = (await request.json()) as { text: string }
       const item: Note = { id: String(store.length + 1), text: body.text.trim(), createdAt: '2026-01-01T00:00:00.000Z' }

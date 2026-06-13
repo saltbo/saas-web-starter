@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
+import { ErrorBoundary } from '@/app/error-boundary'
 import { Providers } from '@/app/providers'
 import { router } from '@/app/router'
 import { loadConfig } from '@/lib/config'
@@ -15,9 +16,11 @@ loadConfig()
   .then(() => {
     createRoot(root).render(
       <StrictMode>
-        <Providers>
-          <RouterProvider router={router} />
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <RouterProvider router={router} />
+          </Providers>
+        </ErrorBoundary>
       </StrictMode>,
     )
   })

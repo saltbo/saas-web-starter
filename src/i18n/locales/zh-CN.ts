@@ -10,6 +10,7 @@ export const zhCN: typeof enUS = {
   addNote: '添加',
   notesEmpty: '还没有笔记。',
   noteCreated: '已添加',
+  loadMore: '加载更多',
   aboutTitle: '关于',
   aboutBody: '一个整洁架构脚手架：Cloudflare Workers 上的 Hono + React SPA + D1。',
   notFoundTitle: '页面不存在',

@@ -1,10 +1,10 @@
 import type { CreateNoteInput } from '@shared/types'
 import { rpc } from '@/lib/rpc'
 
-export async function listNotes() {
-  const response = await rpc.notes.$get()
+export async function listNotes(cursor?: string) {
+  const response = await rpc.notes.$get({ query: cursor ? { cursor } : {} })
   if (!response.ok) throw new Error('Failed to load notes.')
-  return (await response.json()).items
+  return response.json()
 }
 
 export async function createNote(input: CreateNoteInput) {

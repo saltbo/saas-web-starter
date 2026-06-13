@@ -1,9 +1,15 @@
 import type { Note } from '@shared/types'
 
+export interface NotesPage {
+  items: Note[]
+  /** Pass back as `cursor` to fetch the next page; null when there are no more. */
+  nextCursor: string | null
+}
+
 // Interfaces for everything beyond the process boundary. Implemented in adapters/.
 export interface NotesRepo {
-  list(): Promise<Note[]>
-  create(note: Note): Promise<void>
+  list(ownerId: string, opts: { limit: number; cursor?: string }): Promise<NotesPage>
+  create(note: Note, ownerId: string): Promise<void>
 }
 
 export interface AuthUser {

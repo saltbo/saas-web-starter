@@ -14,3 +14,15 @@ Feature: Notes
     Given the notes form
     When the user submits blank text
     Then the note is rejected
+
+  @notes/owner-scope @api
+  Scenario: A user only sees their own notes
+    Given another user has created a note
+    When the current user lists notes
+    Then that note is not in the list
+
+  @notes/paginate @api
+  Scenario: List notes a page at a time
+    Given more notes than the page limit
+    When the user pages through with the cursor
+    Then every note is returned exactly once

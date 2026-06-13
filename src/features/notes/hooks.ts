@@ -1,10 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createNote, listNotes } from './api'
 
 const notesKey = ['notes'] as const
 
 export function useNotes() {
-  return useQuery({ queryKey: notesKey, queryFn: listNotes })
+  return useInfiniteQuery({
+    queryKey: notesKey,
+    queryFn: ({ pageParam }) => listNotes(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  })
 }
 
 export function useCreateNote() {

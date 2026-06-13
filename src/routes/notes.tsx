@@ -12,6 +12,7 @@ export default function NotesPage() {
   const [text, setText] = useState('')
   const notes = useNotes()
   const add = useCreateNote()
+  const items = notes.data?.pages.flatMap((page) => page.items) ?? []
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -50,16 +51,23 @@ export default function NotesPage() {
           <Skeleton className="h-9" />
           <Skeleton className="h-9" />
         </div>
-      ) : notes.data && notes.data.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {notes.data.map((note) => (
-            <li key={note.id}>
-              <Card size="sm">
-                <CardContent>{note.text}</CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
+      ) : items.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
+            {items.map((note) => (
+              <li key={note.id}>
+                <Card size="sm">
+                  <CardContent>{note.text}</CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+          {notes.hasNextPage && (
+            <Button variant="outline" onClick={() => notes.fetchNextPage()} disabled={notes.isFetchingNextPage}>
+              {t('loadMore')}
+            </Button>
+          )}
+        </div>
       ) : (
         <p className="text-muted-foreground text-sm">{t('notesEmpty')}</p>
       )}

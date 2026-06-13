@@ -2,16 +2,14 @@ import { normalizeNoteText } from '@server/domain/note'
 import type { CreateNoteInput, Note } from '@shared/types'
 import type { Deps } from './deps'
 
-export async function listNotes(deps: Deps): Promise<Note[]> {
-  return deps.notesRepo.list()
-}
-
-export async function createNote(deps: Deps, input: CreateNoteInput): Promise<Note> {
+// Listing is a pure forward to the repo (scoped by owner), so the route calls
+// deps.notesRepo.list directly. createNote has orchestration, so it stays a usecase.
+export async function createNote(deps: Deps, ownerId: string, input: CreateNoteInput): Promise<Note> {
   const note: Note = {
     id: crypto.randomUUID(),
     text: normalizeNoteText(input.text),
     createdAt: new Date().toISOString(),
   }
-  await deps.notesRepo.create(note)
+  await deps.notesRepo.create(note, ownerId)
   return note
 }

@@ -7,6 +7,7 @@ export const enUS = {
   addNote: 'Add',
   notesEmpty: 'No notes yet.',
   noteCreated: 'Note added',
+  loadMore: 'Load more',
   aboutTitle: 'About',
   aboutBody: 'A clean-architecture starter: Hono on Cloudflare Workers + React SPA + D1.',
   notFoundTitle: 'Page not found',
