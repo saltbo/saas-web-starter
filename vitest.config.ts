@@ -32,7 +32,6 @@ export default defineConfig({
     // are proven by the integration suite + `lint:arch`, not a coverage %. See README.
     coverage: {
       provider: 'v8',
-      all: true,
       reporter: ['text', 'text-summary'],
       include: [
         // business logic

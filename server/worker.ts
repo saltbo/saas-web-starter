@@ -1,3 +1,4 @@
+import type { ExecutionContext } from '@cloudflare/workers-types'
 import type { Env } from '@server/env'
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'

@@ -10,15 +10,14 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "noEmit": true,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@server/*": ["./server/*"],
       "@shared/*": ["./shared/*"]
     }
-  },
-  "files": []
+  }
 }
