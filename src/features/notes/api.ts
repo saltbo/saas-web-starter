@@ -1,14 +1,12 @@
-import type { CreateNoteInput } from '@shared/types'
-import { rpc } from '@/lib/rpc'
+import { type CreateNoteInput, createNoteResponseSchema, notesPageSchema } from '@shared/types'
+import { decodeApiResponse, rpc } from '@/shared/api/client'
 
 export async function listNotes(cursor?: string) {
   const response = await rpc.notes.$get({ query: cursor ? { cursor } : {} })
-  if (!response.ok) throw new Error('Failed to load notes.')
-  return response.json()
+  return decodeApiResponse(response, notesPageSchema)
 }
 
 export async function createNote(input: CreateNoteInput) {
   const response = await rpc.notes.$post({ json: input })
-  if (!response.ok) throw new Error('Failed to create note.')
-  return (await response.json()).item
+  return (await decodeApiResponse(response, createNoteResponseSchema)).item
 }

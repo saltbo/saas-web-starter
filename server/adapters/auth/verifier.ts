@@ -1,6 +1,8 @@
 import type { AuthConfig } from '@server/config'
+import { InvalidCredentialError } from '@server/usecases/errors'
 import type { AuthUser, AuthVerifier } from '@server/usecases/ports'
-import { createLocalJWKSet, createRemoteJWKSet, type JWTPayload, jwtVerify } from 'jose'
+import { createLocalJWKSet, createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from 'jose'
+import { z } from 'zod'
 
 type JwksResolver = Parameters<typeof jwtVerify>[1]
 
@@ -8,7 +10,7 @@ type JwksResolver = Parameters<typeof jwtVerify>[1]
 const remoteCache = new Map<string, JwksResolver>()
 
 function toUser(payload: JWTPayload): AuthUser {
-  if (!payload.sub) throw new Error('Token has no subject.')
+  if (!payload.sub) throw new InvalidCredentialError('Credential has no subject.')
   return {
     sub: payload.sub,
     email: typeof payload.email === 'string' ? payload.email : null,
@@ -25,31 +27,33 @@ async function resolveJwks(config: AuthConfig): Promise<JwksResolver> {
   const discoveryUrl = new URL('.well-known/openid-configuration', `${config.issuer.replace(/\/$/, '')}/`)
   const response = await fetch(discoveryUrl)
   if (!response.ok) throw new Error(`OIDC discovery failed: ${response.status}`)
-  const { jwks_uri } = (await response.json()) as { jwks_uri: string }
+  const { jwks_uri } = z.object({ jwks_uri: z.url() }).parse(await response.json())
   const resolver = createRemoteJWKSet(new URL(jwks_uri))
   remoteCache.set(config.issuer, resolver)
   return resolver
 }
 
 export function createAuthVerifier(config: AuthConfig): AuthVerifier {
-  // Dev-only: accept any bearer token and return a fixed user. Gated behind
-  // OIDC_DEV_USER so it can never be on by accident — NEVER set it in production.
-  if (config.devUser) {
-    const user = JSON.parse(config.devUser) as AuthUser
-    return {
-      async verify(token) {
-        if (!token) throw new Error('Missing token.')
-        console.warn('[auth] OIDC_DEV_USER is set — bearer tokens are NOT verified. Dev/E2E only.')
-        return user
-      },
-    }
-  }
-
   return {
     async verify(token) {
       const jwks = await resolveJwks(config)
-      const { payload } = await jwtVerify(token, jwks, { issuer: config.issuer, audience: config.clientId })
-      return toUser(payload)
+      try {
+        const { payload } = await jwtVerify(token, jwks, { issuer: config.issuer, audience: config.clientId })
+        return toUser(payload)
+      } catch (error) {
+        if (
+          error instanceof errors.JWTClaimValidationFailed ||
+          error instanceof errors.JWTExpired ||
+          error instanceof errors.JWSInvalid ||
+          error instanceof errors.JWTInvalid ||
+          error instanceof errors.JWSSignatureVerificationFailed ||
+          error instanceof errors.JWKSNoMatchingKey ||
+          error instanceof errors.JOSEAlgNotAllowed
+        ) {
+          throw new InvalidCredentialError()
+        }
+        throw error
+      }
     },
   }
 }

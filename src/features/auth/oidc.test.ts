@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getToken } from '@/lib/token'
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/shared/api/client'
 
 const signinRedirect = vi.fn()
 const signinRedirectCallback = vi.fn()
@@ -13,20 +13,23 @@ vi.mock('oidc-client-ts', () => ({
     removeUser = removeUser
   },
   WebStorageStateStore: class {},
+  InMemoryWebStorage: class {},
 }))
-vi.mock('@/lib/config', () => ({ getConfig: () => ({ oidc: { issuer: 'https://issuer.test', clientId: 'c' } }) }))
+vi.mock('@/shared/config', () => ({
+  getConfig: () => ({ oidc: { issuer: 'https://issuer.test', clientId: 'c' } }),
+}))
 
 import { completeLogin, isAuthenticated, login, logout } from './oidc'
 
 describe('auth/oidc', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    clearAccessToken()
   })
 
-  it('isAuthenticated reflects the stored token', () => {
+  it('isAuthenticated reflects the in-memory access token', () => {
     expect(isAuthenticated()).toBe(false)
-    localStorage.setItem('auth_token', 't')
+    setAccessToken('t')
     expect(isAuthenticated()).toBe(true)
   })
 
@@ -35,28 +38,22 @@ describe('auth/oidc', () => {
     expect(signinRedirect).toHaveBeenCalledOnce()
   })
 
-  it('completeLogin stores the id_token', async () => {
+  it('completeLogin stores only the access token', async () => {
     signinRedirectCallback.mockResolvedValue({ id_token: 'jwt', access_token: 'a' })
     await completeLogin()
-    expect(getToken()).toBe('jwt')
+    expect(getAccessToken()).toBe('a')
   })
 
-  it('completeLogin falls back to the access_token', async () => {
-    signinRedirectCallback.mockResolvedValue({ access_token: 'a' })
-    await completeLogin()
-    expect(getToken()).toBe('a')
-  })
-
-  it('completeLogin stores nothing when no token is returned', async () => {
+  it('completeLogin rejects a callback without an access token', async () => {
     signinRedirectCallback.mockResolvedValue({})
-    await completeLogin()
-    expect(getToken()).toBeNull()
+    await expect(completeLogin()).rejects.toThrow('access token')
+    expect(getAccessToken()).toBeNull()
   })
 
   it('logout clears the token and removes the user', async () => {
-    localStorage.setItem('auth_token', 't')
+    setAccessToken('t')
     await logout()
-    expect(getToken()).toBeNull()
+    expect(getAccessToken()).toBeNull()
     expect(removeUser).toHaveBeenCalledOnce()
   })
 })

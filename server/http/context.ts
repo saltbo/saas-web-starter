@@ -13,6 +13,10 @@ export interface AppBindings {
 export interface AppVariables {
   deps: Deps
   user: AuthUser
+  authMethod: string
+  requestId: string
+  traceId: string
+  unexpectedError?: Error
 }
 
 export interface AppEnv {

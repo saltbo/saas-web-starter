@@ -32,13 +32,18 @@ describe('config', () => {
 
 describe('auth', () => {
   it('rejects requests without a token [spec: auth/require-token]', async () => {
-    expect((await request('/api/notes')).status).toBe(401)
+    const response = await request('/api/notes')
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({
+      error: { code: 'authentication_required', message: 'Authentication required.' },
+    })
     expect((await request('/api/me')).status).toBe(401)
   })
 
   it('rejects an invalid token [spec: auth/require-token]', async () => {
     const response = await request('/api/me', { headers: { authorization: 'Bearer not-a-jwt' } })
     expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: { code: 'invalid_credential', message: 'Invalid credential.' } })
   })
 
   it('accepts a valid token and returns the user [spec: auth/me]', async () => {
@@ -96,5 +101,13 @@ describe('notes api', () => {
   it('rejects an empty note [spec: notes/validate]', async () => {
     const response = await request('/api/notes', { method: 'POST', auth: true, body: JSON.stringify({ text: '   ' }) })
     expect(response.status).toBe(400)
+  })
+
+  it('rejects a malformed cursor instead of starting over [spec: notes/invalid-cursor]', async () => {
+    const response = await request('/api/notes?cursor=broken', { auth: true })
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      error: { code: 'invalid_cursor', message: 'Invalid pagination cursor.' },
+    })
   })
 })

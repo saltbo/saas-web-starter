@@ -1,5 +1,6 @@
 import type { createDb } from '@server/db/client'
 import { notes } from '@server/db/schema'
+import { InvalidCursorError } from '@server/usecases/errors'
 import type { NotesPage, NotesRepo } from '@server/usecases/ports'
 import { and, desc, eq, lt, or } from 'drizzle-orm'
 
@@ -12,15 +13,16 @@ function encodeCursor(row: { createdAt: string; id: string }): string {
   return `${row.createdAt}|${row.id}`
 }
 
-function decodeCursor(cursor: string): { createdAt: string; id: string } | null {
+function decodeCursor(cursor: string): { createdAt: string; id: string } {
   const [createdAt, id] = cursor.split('|')
-  return createdAt && id ? { createdAt, id } : null
+  if (!createdAt || !id) throw new InvalidCursorError()
+  return { createdAt, id }
 }
 
 export function createNotesRepo(db: Db): NotesRepo {
   return {
     async list(ownerId, { limit, cursor }): Promise<NotesPage> {
-      const after = cursor ? decodeCursor(cursor) : null
+      const after = cursor ? decodeCursor(cursor) : undefined
       const keyset = after
         ? or(lt(notes.createdAt, after.createdAt), and(eq(notes.createdAt, after.createdAt), lt(notes.id, after.id)))
         : undefined

@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { reportBrowserError } from '@/shared/observability/errors'
 
 // Top-level boundary for render errors outside the router (the router has its own
 // errorElement). Class component because React has no hook equivalent.
@@ -10,7 +11,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
   }
 
   componentDidCatch(error: unknown) {
-    console.error('Unhandled UI error:', error)
+    reportBrowserError(error, 'react.error-boundary')
   }
 
   render() {

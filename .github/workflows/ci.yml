@@ -41,6 +41,9 @@ jobs:
       - name: Test (unit + web + integration)
         run: pnpm test
 
+      - name: Behavior coverage
+        run: pnpm test:behavior
+
       - name: Coverage thresholds
         run: pnpm test:coverage
 
@@ -61,8 +64,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright install --with-deps
 
-      # `e2e:server` seeds .dev.vars from e2e/dev.vars (dev-auth) on first run.
       - name: E2E (real stack)
         run: pnpm e2e
+
+      - name: Upload E2E failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-evidence
+          path: artifacts/e2e

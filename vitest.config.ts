@@ -41,17 +41,22 @@ export default defineConfig({
         'shared/**',
         // frontend logic (covered by the `web` project)
         'src/features/**',
-        'src/lib/**',
+        'src/shared/api/**',
+        'src/shared/config/**',
+        'src/shared/observability/**',
+        'src/shared/persistence/**',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/*.d.ts',
         '**/index.ts', // barrels: re-exports only
+        'src/shared/i18n/**',
+        'src/shared/lib/**',
+        'src/shared/query/**',
+        'src/shared/theme/**',
+        'src/shared/ui/**',
         // Presentational / config glue — exercised by the web component tests + e2e,
         // not worth unit-gating (same spirit as "don't test the ui/ primitives").
-        'src/lib/query-client.ts',
-        'src/lib/utils.ts',
-        'src/lib/theme.tsx',
       ],
       thresholds: {
         perFile: true,

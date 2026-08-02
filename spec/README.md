@@ -7,11 +7,12 @@ no Cucumber runner; tests trace back to scenarios by id.
 ## Convention
 
 - One `.feature` file per capability.
-- Each scenario carries two tags: the id `@<capability>/<slug>` and the layer that
-  proves it (`@domain` / `@usecase` / `@web` / `@api` / `@e2e`):
+- Each scenario has a stable `@<capability>/<slug>` id and one canonical proof
+  layer tag: `@domain`/`@usecase`, `@web`, `@api`, or `@e2e`. `@critical` adds a
+  required E2E proof. The checker derives its inventory directly from these tags.
 
   ```gherkin
-  @notes/create @web
+  @notes/create @critical
   Scenario: Create and list a note
     Given an empty notes list
     When the user submits a note
@@ -19,8 +20,9 @@ no Cucumber runner; tests trace back to scenarios by id.
   ```
 
 - The id never changes once written (rename = new id).
-- Verify each scenario at the **cheapest layer that can prove it** — most land in
-  usecase/web/api; reserve `@e2e` for genuinely cross-stack, hermetic journeys.
+- Verify each scenario at the **cheapest layer that can prove it**. Require more
+  than one layer only when each layer proves a distinct risk. Reserve E2E for
+  genuinely cross-stack, hermetic journeys.
 
 ## Traceability
 
@@ -30,6 +32,9 @@ scenario to the test that proves it (and back):
 ```ts
 it('creates and lists a note [spec: notes/create]', …)
 ```
+
+`pnpm test:behavior` fails unless every required proof exists, integration behavior
+coverage is 100%, and critical E2E behavior coverage is 100%.
 
 ## Escalation
 

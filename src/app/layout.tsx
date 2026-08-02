@@ -1,12 +1,11 @@
 import { LogOut } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useNavigate } from 'react-router'
-import { Toaster } from 'sonner'
-import { LanguageToggle } from '@/components/language-toggle'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { Button } from '@/components/ui/button'
 import { logout } from '@/features/auth'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/lib/cn'
+import { Button } from '@/shared/ui/button'
+import { LanguageToggle } from '@/shared/ui/language-toggle'
+import { ThemeToggle } from '@/shared/ui/theme-toggle'
 
 // The app shell: composes navigation, theme/language toggles, and auth. Lives in
 // app/ because it wires features together (a reusable component would not).
@@ -55,7 +54,6 @@ export function Layout() {
       <main className="mx-auto max-w-3xl px-4 py-6">
         <Outlet />
       </main>
-      <Toaster richColors />
     </div>
   )
 }

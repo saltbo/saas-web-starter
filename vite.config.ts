@@ -27,7 +27,13 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: process.env.E2E_APP_PORT ? '127.0.0.1' : undefined,
       port: Number(process.env.E2E_APP_PORT ?? 5173),
+      watch: { ignored: ['**/artifacts/**'] },
+    },
+    preview: {
+      host: process.env.E2E_APP_PORT ? '127.0.0.1' : undefined,
+      port: Number(process.env.E2E_APP_PORT ?? 4173),
     },
   }
 })

@@ -3,7 +3,7 @@ Feature: Notes
 
   # The id is the @<capability>/<slug> tag; the second tag is the layer that proves it.
 
-  @notes/create @web
+  @notes/create @web @critical
   Scenario: Create and list a note
     Given an empty notes list
     When the user submits a note
@@ -26,3 +26,9 @@ Feature: Notes
     Given more notes than the page limit
     When the user pages through with the cursor
     Then every note is returned exactly once
+
+  @notes/invalid-cursor @api
+  Scenario: Reject an invalid pagination cursor
+    Given a malformed notes cursor
+    When the user requests the next page
+    Then the API rejects the cursor instead of silently starting over

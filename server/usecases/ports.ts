@@ -19,6 +19,14 @@ export interface AuthUser {
 }
 
 export interface AuthVerifier {
-  /** Verifies a bearer token and returns the user, or throws if invalid. */
+  /** Verifies a bearer token or throws InvalidCredentialError. */
   verify(token: string): Promise<AuthUser>
+}
+
+export interface Clock {
+  now(): Date
+}
+
+export interface IdGenerator {
+  next(): string
 }

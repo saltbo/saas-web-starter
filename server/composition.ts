@@ -1,5 +1,6 @@
 import { createAuthVerifier } from '@server/adapters/auth/verifier'
 import { createNotesRepo } from '@server/adapters/repos/notes'
+import { systemClock, uuidGenerator } from '@server/adapters/system'
 import { getAuthConfig } from '@server/config'
 import { createDb } from '@server/db/client'
 import type { Env } from '@server/env'
@@ -11,5 +12,7 @@ export function createDeps(env: Env): Deps {
   return {
     notesRepo: createNotesRepo(db),
     authVerifier: createAuthVerifier(getAuthConfig(env)),
+    clock: systemClock,
+    idGenerator: uuidGenerator,
   }
 }

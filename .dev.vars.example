@@ -5,7 +5,3 @@
 # OIDC: the API verifies bearer JWTs against this issuer's JWKS (audience = client id).
 OIDC_ISSUER=https://your-issuer.example.com
 OIDC_CLIENT_ID=your-client-id
-
-# Dev/E2E only — accept any bearer token as this user, skipping verification.
-# NEVER set this in production.
-# OIDC_DEV_USER={"sub":"dev","email":"dev@local","name":"Dev"}

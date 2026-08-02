@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { clearToken, setToken } from '@/lib/token'
+import { clearAccessToken, setAccessToken } from '@/shared/api/client'
 import { requireAuthLoader } from './guard'
 
 describe('requireAuthLoader', () => {
-  afterEach(() => clearToken())
+  afterEach(() => clearAccessToken())
 
   it('redirects to /login when unauthenticated', () => {
     const result = requireAuthLoader()
@@ -13,7 +13,7 @@ describe('requireAuthLoader', () => {
   })
 
   it('passes through when authenticated', () => {
-    setToken('t')
+    setAccessToken('t')
     expect(requireAuthLoader()).toBeNull()
   })
 })

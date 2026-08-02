@@ -1,13 +1,11 @@
 /**
- * Architecture enforcement for the hono-cf-clean-arch layout.
+ * Executable architecture boundaries for this starter.
  *
  *   pnpm add -D dependency-cruiser
  *   package.json: "lint:arch": "depcruise server/ shared/ src/ --config .dependency-cruiser.cjs"
  *   (keep the trailing slashes — bare directory names can resolve to 0 modules)
  *
- * tsConfig points at server/tsconfig.json: it inherits the path aliases + jsx from
- * the root base and has a non-empty `include`, so module resolution works for both
- * halves (the root base uses `files: []` and can't be loaded directly).
+ * tsConfig points at the architecture-wide config so resolution covers both halves.
  */
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -77,10 +75,15 @@ module.exports = {
     },
     {
       name: 'frontend-not-into-server',
-      comment:
-        'The SPA talks to the server over HTTP at runtime. Only type-only imports are allowed (Hono RPC AppType).',
+      comment: 'Only the transport adapter may import the Hono AppType, and only as a type.',
       severity: 'error',
-      from: { path: '^src' },
+      from: { path: '^src', pathNot: '^src/shared/api/client\.ts$' },
+      to: { path: '^server' },
+    },
+    {
+      name: 'transport-server-import-is-type-only',
+      severity: 'error',
+      from: { path: '^src/shared/api/client\.ts$' },
       to: { path: '^server', dependencyTypesNot: ['type-only'] },
     },
     {
@@ -93,31 +96,41 @@ module.exports = {
 
     // ---- frontend: keep the SPA from turning into a ball of mud ----
     {
-      name: 'frontend-lib-is-a-leaf',
-      comment: 'src/lib is cross-cutting infrastructure; it must not import features, routes, app, or components.',
+      name: 'frontend-shared-is-a-leaf',
+      comment: 'src/shared contains stack infrastructure and primitives; it never reaches into product code.',
       severity: 'error',
-      from: { path: '^src/lib' },
-      to: { path: '^src/(features|routes|app|components)' },
-    },
-    {
-      name: 'frontend-components-no-features',
-      comment: 'Shared components are composed by features/routes/app, never the reverse.',
-      severity: 'error',
-      from: { path: '^src/components' },
+      from: { path: '^src/shared' },
       to: { path: '^src/(features|routes|app)' },
     },
     {
-      name: 'frontend-features-are-isolated',
-      comment: 'A feature must not import another feature; share via lib/ or shared/.',
+      name: 'frontend-features-do-not-compose-pages',
+      comment: 'Features own capabilities; app and route composition point toward them.',
+      severity: 'error',
+      from: { path: '^src/features' },
+      to: { path: '^src/(routes|app)' },
+    },
+    {
+      name: 'cross-feature-imports-use-public-entry',
+      comment: 'A feature may depend on another feature only through its public index.',
       severity: 'error',
       from: { path: '^src/features/([^/]+)/' },
-      to: { path: '^src/features/([^/]+)/', pathNot: '^src/features/$1/' },
+      to: {
+        path: '^src/features/',
+        pathNot: ['^src/features/$1/', '^src/features/[^/]+/index\.tsx?$'],
+      },
+    },
+    {
+      name: 'composition-imports-feature-public-entry',
+      comment: 'App and routes consume feature public APIs, not feature internals.',
+      severity: 'error',
+      from: { path: '^src/(app|routes)' },
+      to: { path: '^src/features/[^/]+/', pathNot: '^src/features/[^/]+/index\.tsx?$' },
     },
     {
       name: 'frontend-routes-are-leaves',
       comment: 'Route pages are mounted by app/router; features, components, and lib never import them.',
       severity: 'error',
-      from: { path: '^src/(features|components|lib)' },
+      from: { path: '^src/(features|shared)' },
       to: { path: '^src/routes' },
     },
   ],
@@ -125,7 +138,7 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     // Tests are exempt; so is generated code (openapi-ts clients etc.).
     exclude: { path: ['\\.(test|spec)\\.[jt]sx?$', '\\.gen\\.[jt]s$'] },
-    tsConfig: { fileName: 'server/tsconfig.json' },
+    tsConfig: { fileName: 'tsconfig.arch.json' },
     tsPreCompilationDeps: true,
   },
 }

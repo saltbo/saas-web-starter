@@ -9,7 +9,7 @@ harness wired up. A single `notes` resource is the worked example of every layer
 - Hono on Cloudflare Workers, D1 (drizzle-orm, generated migrations)
 - Typed end to end: the SPA calls the API through a **Hono RPC** client (`hc<AppType>`)
 - React 19 + react-query + react-router 7 (lazy routes), Vite (`@cloudflare/vite-plugin`)
-- Tailwind v4 + shadcn/ui, sonner toasts, i18n (i18next), light/dark/system theme
+- Tailwind v4 + shadcn/ui, i18n (i18next), light/dark/system theme
 - OIDC auth (`oidc-client-ts` + `jose`), stateless JWT verification
 - Biome, dependency-cruiser (architecture enforcement), TypeScript
 - Vitest (unit / jsdom+MSW / workerd+D1), Playwright E2E, Gherkin `.feature` specs
@@ -45,21 +45,19 @@ server/
   worker.ts      entry: wires deps, secure headers, serves /api/* + static assets
 shared/          the API contract (DTOs) — the only thing both halves import
 src/
-  app/           providers, router, shell  (composition; may import anything in src)
-  routes/        thin page components       (mounted only by app/router)
-  features/      notes, auth — api + hooks  (isolated from each other)
-  components/     ui primitives + toggles    (never import features)
-  lib/           rpc, config, token, theme, query-client, utils  (a leaf)
-  i18n/          setup + locales
+  app/           providers, router, shell (composition)
+  routes/        thin page composition
+  features/      product capabilities with public index.ts entries
+  shared/        api, config, observability, persistence, query, theme, ui, lib, i18n
 ```
 
-The SPA talks to the API only through `lib/rpc.ts`. The one compile-time link to
+The SPA talks to the API only through `shared/api/client.ts`. The one compile-time link to
 the server is the type-only `AppType` import (Hono RPC); at runtime it's pure HTTP.
 
 ## Auth (OIDC)
 
 No custom login backend. The SPA logs in against your OIDC provider
-(Authorization Code + PKCE), stores the token in localStorage, and sends it as
+(Authorization Code + PKCE), keeps the Access Token in memory, and sends it as
 `Authorization: Bearer`. The API verifies the JWT in middleware (against the
 issuer's JWKS; audience = client id) — stateless, no session table.
 
@@ -68,8 +66,12 @@ config (issuer + client id) from `GET /api/configz` at startup, so the same bund
 runs in every environment.
 
 - Backend: copy `.dev.vars.example` → `.dev.vars`, set `OIDC_ISSUER` / `OIDC_CLIENT_ID`.
-- Local/E2E without a provider: set `OIDC_DEV_USER` in `.dev.vars` to accept any
-  bearer token as a fixed user. **Never set it in production.**
+E2E starts its own minimal OIDC provider and uses the same login and JWT verification
+path as production. There is no development authentication bypass in application code.
+
+`pnpm e2e` builds and tests a production preview with dynamic ports and isolated
+state. It also gates accessibility/focus, browser support, CSP/injection behavior,
+route performance budgets, and a reviewed visual baseline.
 
 ## Adding a capability
 
@@ -82,7 +84,7 @@ Copy the `notes` slice end to end:
 5. `server/adapters/repos/` — the drizzle repo.
 6. `server/composition.ts` — wire the repo into `createDeps`.
 7. `server/http/` — a chained `*Routes` const; mount in `server/app.ts`.
-8. `src/features/<name>/` — `api.ts` (rpc calls) + `hooks.ts` (react-query); a page
+8. `src/features/<name>/` — runtime-decoded API calls, hooks, and feature UI; a page
    in `src/routes/`; tests at the cheapest layer; a `spec/*.feature` scenario.
 
 ## Conventions
@@ -104,15 +106,18 @@ and a real `database_id` in `wrangler.toml`. Manual: `pnpm build && pnpm run dep
 **fast** suites own (`unit` + `web`):
 
 - business logic (`server/domain`, `server/usecases`) — **95%**
-- everything else gated (`shared`, `src/features`, `src/lib` logic) — **90%**
+- everything else gated (`shared`, `src/features` logic) — **90%**
 
 The edge layers the **workerd `integration`** suite owns (`adapters/repos`,
 `composition`, `worker`, http full-flow, the real JWKS verify path) can't be
 v8-instrumented, so they're guaranteed by the integration suite passing +
 `lint:arch`, not a coverage number. Pure presentational/config glue
-(`lib/theme`, `lib/query-client`, `lib/utils`, `ui/` primitives) is excluded.
+(`shared/theme`, `shared/query`, `shared/lib`, `shared/ui`) is excluded.
+
+`pnpm test:behavior` independently gates the behavior inventory: all required
+integration behaviors and all critical E2E journeys must have test evidence (100%).
 
 ## Scripts
 
-`pnpm test` (unit+web+integration) · `pnpm e2e` · `pnpm lint` · `pnpm lint:arch` ·
+`pnpm verify` · `pnpm test` (unit+web+integration) · `pnpm test:behavior` · `pnpm e2e` · `pnpm lint:arch` ·
 `pnpm typecheck` · `pnpm build` · `pnpm db:generate` · `pnpm cf-typegen`
