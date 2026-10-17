@@ -30,18 +30,23 @@ export async function startOidcServer() {
     }
 
     if (url.pathname === '/.well-known/openid-configuration') {
-      json(response, 200, {
-        issuer,
-        authorization_endpoint: `${issuer}/authorize`,
-        token_endpoint: `${issuer}/token`,
-        jwks_uri: `${issuer}/jwks`,
-        response_types_supported: ['code'],
-        subject_types_supported: ['public'],
-        id_token_signing_alg_values_supported: ['ES256'],
-        token_endpoint_auth_methods_supported: ['none'],
-        code_challenge_methods_supported: ['S256'],
-        scopes_supported: ['openid', 'profile', 'email'],
-      }, origin)
+      json(
+        response,
+        200,
+        {
+          issuer,
+          authorization_endpoint: `${issuer}/authorize`,
+          token_endpoint: `${issuer}/token`,
+          jwks_uri: `${issuer}/jwks`,
+          response_types_supported: ['code'],
+          subject_types_supported: ['public'],
+          id_token_signing_alg_values_supported: ['ES256'],
+          token_endpoint_auth_methods_supported: ['none'],
+          code_challenge_methods_supported: ['S256'],
+          scopes_supported: ['openid', 'profile', 'email'],
+        },
+        origin,
+      )
       return
     }
 
@@ -67,7 +72,11 @@ export async function startOidcServer() {
         nonce: url.searchParams.get('nonce'),
         redirectUri,
       })
-      const callback = new URL(redirectUri)
+      const callback = URL.parse(redirectUri)
+      if (!callback) {
+        json(response, 400, { error: 'invalid_request' }, origin)
+        return
+      }
       callback.searchParams.set('code', code)
       callback.searchParams.set('state', state)
       response.writeHead(302, { location: callback.toString() })
@@ -82,9 +91,7 @@ export async function startOidcServer() {
       const code = body.get('code')
       const transaction = code ? codes.get(code) : undefined
       const verifier = body.get('code_verifier')
-      const challenge = verifier
-        ? createHash('sha256').update(verifier).digest('base64url')
-        : undefined
+      const challenge = verifier ? createHash('sha256').update(verifier).digest('base64url') : undefined
       if (
         !code ||
         !transaction ||
@@ -119,13 +126,18 @@ export async function startOidcServer() {
         .setExpirationTime(now + 300)
         .sign(privateKey)
 
-      json(response, 200, {
-        access_token: accessToken,
-        id_token: idToken,
-        token_type: 'Bearer',
-        expires_in: 300,
-        scope: 'openid profile email',
-      }, origin)
+      json(
+        response,
+        200,
+        {
+          access_token: accessToken,
+          id_token: idToken,
+          token_type: 'Bearer',
+          expires_in: 300,
+          scope: 'openid profile email',
+        },
+        origin,
+      )
       return
     }
 
@@ -136,5 +148,9 @@ export async function startOidcServer() {
   const address = server.address()
   if (!address || typeof address === 'string') throw new Error('OIDC server did not bind a TCP port.')
   issuer = `http://127.0.0.1:${address.port}`
-  return { issuer, close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))) }
+  return {
+    issuer,
+    privateJwk: await exportJWK(privateKey),
+    close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+  }
 }

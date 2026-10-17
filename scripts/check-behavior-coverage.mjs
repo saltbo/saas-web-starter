@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -28,9 +28,7 @@ function parseScenarios(source, file) {
     const id = tags.find((tag) => tag.includes('/'))
     const layerTag = tags.find((tag) => ['api', 'domain', 'e2e', 'usecase', 'web'].includes(tag))
     if (!id || !layerTag) throw new Error(`${file}: every scenario needs a stable id and proof-layer tag.`)
-    const primaryLayer = { api: 'integration', domain: 'unit', e2e: 'e2e', usecase: 'unit', web: 'component' }[
-      layerTag
-    ]
+    const primaryLayer = { api: 'integration', domain: 'unit', e2e: 'e2e', usecase: 'unit', web: 'component' }[layerTag]
     scenarios.push({ id, critical: tags.includes('critical'), required: [primaryLayer] })
     if (tags.includes('critical') && primaryLayer !== 'e2e') scenarios.at(-1).required.push('e2e')
     tags = []
@@ -42,7 +40,9 @@ const featureFiles = await sourceFiles(path.join(root, 'spec'), (file) => file.e
 const scenarios = (
   await Promise.all(featureFiles.map(async (file) => parseScenarios(await readFile(file, 'utf8'), file)))
 ).flat()
-const duplicateIds = scenarios.filter((scenario, index) => scenarios.findIndex(({ id }) => id === scenario.id) !== index)
+const duplicateIds = scenarios.filter(
+  (scenario, index) => scenarios.findIndex(({ id }) => id === scenario.id) !== index,
+)
 if (duplicateIds.length > 0) throw new Error(`Duplicate behavior ids: ${duplicateIds.map(({ id }) => id).join(', ')}`)
 
 const layerFiles = {
@@ -63,7 +63,8 @@ const sources = Object.fromEntries(
   ),
 )
 for (const [layer, source] of Object.entries(sources)) {
-  if (/\b(?:it|test)\.(?:skip|todo)\s*\(/.test(source)) throw new Error(`${layer}: skipped or todo tests are forbidden.`)
+  if (/\b(?:it|test)\.(?:skip|todo)\s*\(/.test(source))
+    throw new Error(`${layer}: skipped or todo tests are forbidden.`)
 }
 
 const covered = (id, layer) => sources[layer].includes(`[spec: ${id}]`)
@@ -77,10 +78,7 @@ const integrationCoverage = percent(
   integration.filter((scenario) => covered(scenario.id, 'integration')).length,
   integration.length,
 )
-const criticalE2E = percent(
-  critical.filter((scenario) => covered(scenario.id, 'e2e')).length,
-  critical.length,
-)
+const criticalE2E = percent(critical.filter((scenario) => covered(scenario.id, 'e2e')).length, critical.length)
 
 console.info(`BDD traceability: ${missing.length === 0 ? '100%' : 'incomplete'}`)
 console.info(`Integration behavior coverage: ${integrationCoverage.toFixed(0)}%`)

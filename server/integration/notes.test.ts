@@ -1,15 +1,22 @@
-import { env } from 'cloudflare:test'
-import { worker } from '@server/worker'
 import { importJWK, SignJWT } from 'jose'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+const origin = process.env.E2E_BASE_URL
+const issuer = process.env.TEST_OIDC_ISSUER
+const privateJwk = process.env.TEST_PRIVATE_JWK
+if (!origin || !issuer || !privateJwk) throw new Error('Run integration tests with pnpm test:integration.')
+const key = await importJWK(JSON.parse(privateJwk), 'ES256')
+let subject: string
+beforeEach(() => {
+  subject = crypto.randomUUID()
+})
 
 async function bearer(claims: { sub?: string; email?: string } = {}) {
-  const key = await importJWK(JSON.parse(env.TEST_PRIVATE_JWK), 'ES256')
   const token = await new SignJWT({ email: claims.email ?? 'user@test' })
-    .setProtectedHeader({ alg: 'ES256', kid: 'test' })
-    .setSubject(claims.sub ?? 'user-1')
-    .setIssuer('https://issuer.test')
-    .setAudience('test-client')
+    .setProtectedHeader({ alg: 'ES256', kid: 'e2e' })
+    .setSubject(claims.sub ?? subject)
+    .setIssuer(issuer!)
+    .setAudience('e2e-client')
     .setExpirationTime('5m')
     .sign(key)
   return `Bearer ${token}`
@@ -19,18 +26,27 @@ async function request(path: string, init?: RequestInit & { auth?: boolean; sub?
   const headers = new Headers(init?.headers)
   if (init?.body && !headers.has('content-type')) headers.set('content-type', 'application/json')
   if (init?.auth) headers.set('authorization', await bearer({ sub: init.sub }))
-  return worker.fetch(new Request(`http://app.test${path}`, { ...init, headers }), env)
+  return fetch(`${origin}${path}`, { ...init, headers })
 }
 
 describe('config', () => {
   it('serves public runtime config without a token', async () => {
     const response = await request('/api/configz')
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ oidc: { issuer: 'https://issuer.test', clientId: 'test-client' } })
+    expect(await response.json()).toEqual({ oidc: { issuer, clientId: 'e2e-client' } })
   })
 })
 
 describe('auth', () => {
+  it.each([
+    'GET',
+    'POST',
+  ])('keeps missing %s API routes out of the SPA fallback [spec: delivery/api-boundary]', async (method) => {
+    const response = await request('/api/does-not-exist', { auth: true, method })
+    expect(response.status).toBe(404)
+    expect(response.headers.get('content-type')).toContain('application/json')
+    expect(await response.json()).toEqual({ error: { code: 'not_found', message: 'API route not found.' } })
+  })
   it('rejects requests without a token [spec: auth/require-token]', async () => {
     const response = await request('/api/notes')
     expect(response.status).toBe(401)
@@ -49,7 +65,7 @@ describe('auth', () => {
   it('accepts a valid token and returns the user [spec: auth/me]', async () => {
     const response = await request('/api/me', { auth: true })
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ user: { sub: 'user-1', email: 'user@test', name: null } })
+    expect(await response.json()).toEqual({ user: { sub: subject, email: 'user@test', name: null } })
   })
 })
 

@@ -20,18 +20,25 @@ export type NotesPage = z.infer<typeof notesPageSchema>
 
 export const createNoteResponseSchema = z.object({ item: noteSchema })
 
-export const apiErrorSchema = z.object({
-  error: z.object({
-    code: z.enum([
-      'authentication_required',
-      'invalid_credential',
-      'invalid_request',
-      'invalid_cursor',
-      'internal_error',
-    ]),
-    message: z.string().min(1),
+export const apiErrorSchema = z.union([
+  z.object({
+    error: z.object({
+      code: z.enum([
+        'authentication_required',
+        'invalid_credential',
+        'invalid_request',
+        'invalid_cursor',
+        'not_found',
+        'internal_error',
+      ]),
+      message: z.string().min(1),
+    }),
   }),
-})
+  // Void's Standard Schema validator owns input-error responses.
+  z
+    .object({ error: z.literal('Validation failed'), issues: z.array(z.unknown()) })
+    .transform(() => ({ error: { code: 'invalid_request' as const, message: 'Invalid request.' } })),
+])
 export type ApiErrorPayload = z.infer<typeof apiErrorSchema>
 
 // Public runtime config the SPA fetches from GET /api/configz. The backend env is

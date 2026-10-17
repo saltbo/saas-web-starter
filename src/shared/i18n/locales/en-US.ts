@@ -10,7 +10,7 @@ export const enUS = {
   notesEmpty: 'No notes yet.',
   loadMore: 'Load more',
   aboutTitle: 'About',
-  aboutBody: 'A clean-architecture starter: Hono on Cloudflare Workers + React SPA + D1.',
+  aboutBody: 'A Void starter: React SPA + file-based API routes + Cloudflare D1.',
   notFoundTitle: 'Page not found',
   notFoundBody: 'That page does not exist.',
   backHome: 'Back home',

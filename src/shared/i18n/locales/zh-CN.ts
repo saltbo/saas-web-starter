@@ -13,7 +13,7 @@ export const zhCN: typeof enUS = {
   notesEmpty: '还没有笔记。',
   loadMore: '加载更多',
   aboutTitle: '关于',
-  aboutBody: '一个整洁架构脚手架：Cloudflare Workers 上的 Hono + React SPA + D1。',
+  aboutBody: '基于 Void 的脚手架：React SPA + 文件 API 路由 + Cloudflare D1。',
   notFoundTitle: '页面不存在',
   notFoundBody: '这个页面不存在。',
   backHome: '返回首页',

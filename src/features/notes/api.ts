@@ -1,12 +1,16 @@
 import { type CreateNoteInput, createNoteResponseSchema, notesPageSchema } from '@shared/types'
-import { decodeApiResponse, rpc } from '@/shared/api/client'
+import { fetch } from 'void/client'
+import { apiOptions, decodeApiResponse } from '@/shared/api/client'
 
 export async function listNotes(cursor?: string) {
-  const response = await rpc.notes.$get({ query: cursor ? { cursor } : {} })
-  return decodeApiResponse(response, notesPageSchema)
+  return decodeApiResponse(fetch('/api/notes', { ...apiOptions(), query: cursor ? { cursor } : {} }), notesPageSchema)
 }
 
 export async function createNote(input: CreateNoteInput) {
-  const response = await rpc.notes.$post({ json: input })
-  return (await decodeApiResponse(response, createNoteResponseSchema)).item
+  return (
+    await decodeApiResponse(
+      fetch('/api/notes', { ...apiOptions(), method: 'POST', body: input }),
+      createNoteResponseSchema,
+    )
+  ).item
 }

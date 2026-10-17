@@ -1,4 +1,4 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text } from 'void/schema-d1'
 
 export const notes = sqliteTable('notes', {
   id: text('id').primaryKey(),

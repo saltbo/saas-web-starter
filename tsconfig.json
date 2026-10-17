@@ -1,4 +1,5 @@
 {
+  "extends": "./.void/tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -11,13 +12,14 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "noEmit": true,
-    "declaration": false,
-    "declarationMap": false,
-    "sourceMap": true,
+    "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
-      "@server/*": ["./server/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "@schema": ["./db/schema.ts"],
+      "void/routes": ["./.void/routes.d.ts"],
+      "void/db": ["./.void/db.d.ts"]
     }
-  }
+  },
+  "include": ["src", "server", "routes", "middleware", "shared", "db/schema.ts", "*.ts", "e2e/*.ts"]
 }

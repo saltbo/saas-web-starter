@@ -1,8 +1,18 @@
-import type { AuthConfig } from '@server/config'
-import { InvalidCredentialError } from '@server/usecases/errors'
-import type { AuthUser, AuthVerifier } from '@server/usecases/ports'
 import { createLocalJWKSet, createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from 'jose'
 import { z } from 'zod'
+import { InvalidCredentialError } from './errors'
+
+export interface AuthConfig {
+  issuer: string
+  clientId: string
+  jwks?: string
+}
+
+export interface AuthUser {
+  sub: string
+  email: string | null
+  name: string | null
+}
 
 type JwksResolver = Parameters<typeof jwtVerify>[1]
 
@@ -19,7 +29,13 @@ function toUser(payload: JWTPayload): AuthUser {
 }
 
 async function resolveJwks(config: AuthConfig): Promise<JwksResolver> {
-  if (config.jwks) return createLocalJWKSet(JSON.parse(config.jwks))
+  if (config.jwks) {
+    try {
+      return createLocalJWKSet(JSON.parse(config.jwks))
+    } catch (cause) {
+      throw new Error('Invalid OIDC signing-key configuration.', { cause })
+    }
+  }
 
   const cached = remoteCache.get(config.issuer)
   if (cached) return cached
@@ -28,14 +44,20 @@ async function resolveJwks(config: AuthConfig): Promise<JwksResolver> {
   const response = await fetch(discoveryUrl)
   if (!response.ok) throw new Error(`OIDC discovery failed: ${response.status}`)
   const { jwks_uri } = z.object({ jwks_uri: z.url() }).parse(await response.json())
-  const resolver = createRemoteJWKSet(new URL(jwks_uri))
+  let jwksUrl: URL
+  try {
+    jwksUrl = new URL(jwks_uri)
+  } catch (cause) {
+    throw new Error('OIDC discovery returned an invalid signing-key URL.', { cause })
+  }
+  const resolver = createRemoteJWKSet(jwksUrl)
   remoteCache.set(config.issuer, resolver)
   return resolver
 }
 
-export function createAuthVerifier(config: AuthConfig): AuthVerifier {
+export function createAuthVerifier(config: AuthConfig) {
   return {
-    async verify(token) {
+    async verify(token: string) {
       const jwks = await resolveJwks(config)
       try {
         const { payload } = await jwtVerify(token, jwks, { issuer: config.issuer, audience: config.clientId })

@@ -6,7 +6,20 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["server/**/*.ts", "shared/**/*.ts", "src/**/*.ts", "src/**/*.tsx", "e2e/**/*.ts", "*.ts", "!dist"],
+    "includes": [
+      "server/**/*.ts",
+      "shared/**/*.ts",
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "routes/**/*.ts",
+      "middleware/**/*.ts",
+      "db/schema.ts",
+      "e2e/**/*.ts",
+      "e2e/**/*.mjs",
+      "scripts/**/*.mjs",
+      "*.ts",
+      "!dist"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {

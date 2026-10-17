@@ -1,6 +1,5 @@
-import type { AppType } from '@server/app'
 import { apiErrorSchema } from '@shared/types'
-import { hc } from 'hono/client'
+import { FetchError } from 'void/client'
 import type { z } from 'zod'
 
 let accessToken: string | null = null
@@ -36,43 +35,30 @@ export class ApiProtocolError extends Error {
   }
 }
 
-async function readJson(response: Response): Promise<unknown> {
-  if (!response.headers.get('content-type')?.includes('application/json')) {
-    throw new ApiProtocolError(`API returned non-JSON content for status ${response.status}.`)
-  }
-  try {
-    return await response.json()
-  } catch (cause) {
-    throw new ApiProtocolError('API returned malformed JSON.', { cause })
-  }
+export function apiOptions() {
+  const headers = new Headers()
+  if (accessToken) headers.set('authorization', `Bearer ${accessToken}`)
+  return { headers, retry: 0 }
 }
 
-export async function decodeApiResponse<T>(response: Response, schema: z.ZodType<T>): Promise<T> {
-  const payload = await readJson(response)
-  if (!response.ok) {
-    const parsedError = apiErrorSchema.safeParse(payload)
-    if (!parsedError.success) {
-      throw new ApiProtocolError(`API error response does not match the contract for status ${response.status}.`)
+export async function decodeApiResponse<T>(operation: Promise<unknown>, schema: z.ZodType<T>): Promise<T> {
+  let payload: unknown
+  try {
+    payload = await operation
+  } catch (error) {
+    if (!(error instanceof FetchError) || error.status === undefined) throw error
+    if (error.status === 401) clearAccessToken()
+    const parsed = apiErrorSchema.safeParse(error.data)
+    if (!parsed.success) {
+      throw new ApiProtocolError(`API error response does not match the contract for status ${error.status}.`, {
+        cause: error,
+      })
     }
-    if (response.status === 401) clearAccessToken()
-    throw new ApiClientError(response.status, parsedError.data.error.code, parsedError.data.error.message)
+    throw new ApiClientError(error.status, parsed.data.error.code, parsed.data.error.message)
   }
-
   const parsed = schema.safeParse(payload)
   if (!parsed.success) {
-    throw new ApiProtocolError('API success response does not match the runtime contract.', {
-      cause: parsed.error,
-    })
+    throw new ApiProtocolError('API success response does not match the runtime contract.', { cause: parsed.error })
   }
   return parsed.data
 }
-
-// Hono RPC supplies compile-time route inference. Runtime payloads are decoded
-// separately through decodeApiResponse before they enter a feature.
-const authFetch: typeof fetch = async (input, init) => {
-  const headers = new Headers(init?.headers)
-  if (accessToken) headers.set('authorization', `Bearer ${accessToken}`)
-  return fetch(input, { ...init, headers })
-}
-
-export const rpc = hc<AppType>('/', { fetch: authFetch }).api

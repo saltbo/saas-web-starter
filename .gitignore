@@ -1,5 +1,10 @@
 node_modules
 dist
+.void
+.void-wrangler.jsonc
+.pi
+.env
+.env.*
 .wrangler
 .dev.vars
 server/worker-configuration.d.ts

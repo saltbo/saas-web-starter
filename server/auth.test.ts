@@ -1,7 +1,7 @@
-import { InvalidCredentialError } from '@server/usecases/errors'
 import { exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { describe, expect, it, vi } from 'vitest'
-import { createAuthVerifier } from './verifier'
+import { createAuthVerifier } from './auth'
+import { InvalidCredentialError } from './errors'
 
 async function verifierAndKey() {
   const { publicKey, privateKey } = await generateKeyPair('ES256', { extractable: true })
