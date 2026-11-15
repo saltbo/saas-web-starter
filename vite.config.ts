@@ -21,9 +21,9 @@ export default defineConfig(() => {
     ].filter(Boolean),
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
-        '@server': path.resolve(__dirname, './server'),
-        '@shared': path.resolve(__dirname, './shared'),
+        '@': path.resolve(import.meta.dirname, './src'),
+        '@server': path.resolve(import.meta.dirname, './server'),
+        '@shared': path.resolve(import.meta.dirname, './shared'),
       },
     },
     server: {

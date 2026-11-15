@@ -1,13 +1,13 @@
 import path from 'node:path'
-import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
+import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
 import react from '@vitejs/plugin-react-swc'
 import { exportJWK, generateKeyPair } from 'jose'
 import { defineConfig } from 'vitest/config'
 
 const alias = {
-  '@': path.resolve(__dirname, './src'),
-  '@server': path.resolve(__dirname, './server'),
-  '@shared': path.resolve(__dirname, './shared'),
+  '@': path.resolve(import.meta.dirname, './src'),
+  '@server': path.resolve(import.meta.dirname, './server'),
+  '@shared': path.resolve(import.meta.dirname, './shared'),
 }
 
 // A throwaway keypair so the integration suite exercises the REAL JWT verification
@@ -105,7 +105,7 @@ export default defineConfig({
               compatibilityFlags: ['nodejs_compat'],
               d1Databases: ['DB'],
               bindings: {
-                TEST_MIGRATIONS: await readD1Migrations(path.join(__dirname, 'migrations')),
+                TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, 'migrations')),
                 ...(await testAuthBindings()),
               },
             },
